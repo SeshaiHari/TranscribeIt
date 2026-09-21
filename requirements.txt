@@ -1,0 +1,5 @@
+faster-whisper
+customtkinter
+psutil
+# Apple Silicon GPU engine; skipped automatically on Windows and Intel Macs
+mlx-whisper; sys_platform == "darwin" and platform_machine == "arm64"
