@@ -3,7 +3,7 @@ name: Build apps
 on:
   workflow_dispatch:
   push:
-    tags: ["v*"]
+    tags: ["v*"]   # pushing a tag like v1.0 builds the apps and publishes a Release
 
 jobs:
   build:
@@ -16,6 +16,8 @@ jobs:
           - os: windows-latest
             artifact: TranscribeIt-windows
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write   # lets the last step attach files to a Release
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,7 +31,14 @@ jobs:
       - name: Zip (Windows)
         if: runner.os == 'Windows'
         run: Compress-Archive -Path "dist/TranscribeIt" -DestinationPath "${{ matrix.artifact }}.zip"
-      - uses: actions/upload-artifact@v4
+      # archive: false uploads the zip as-is, so the download is a single zip, not a zip in a zip.
+      - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}.zip
+          archive: false
+      # Tag pushes only: attach the same zip to a GitHub Release.
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: ${{ matrix.artifact }}.zip
+          generate_release_notes: true
